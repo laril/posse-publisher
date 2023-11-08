@@ -1,88 +1,20 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <title>RSS to Social Media Poster</title>
   <link rel="stylesheet" type="text/css" href="css/popup.css">
   <link rel="stylesheet" href="css/output.css">
-  <script src="popup.js"></script>
 </head>
-
 <body class="p-4 bg-gray-100">
   <div class="border-b">
-    <ul class="flex flex-wrap -mb-px" id="tabs">
-      <li class="mr-2">
-        <button
-          class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 group"
-          data-tab-target="#content1">Original</button>
-      </li>
-      <li class="mr-2">
-        <button
-          class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 group"
-          data-tab-target="#content2">Mastodon</button>
-      </li>
-      <li class="mr-2">
-        <button
-          class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 group"
-          data-tab-target="#content3">Bluesky</button>
-      </li>
-      <li class="mr-2">
-        <button
-          class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 group"
-          data-tab-target="#content4">Twitter</button>
-      </li>
-      <li class="mr-2">
-        <button
-          class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 group"
-          data-tab-target="#content5">Facebook</button>
-      </li>
-      <li class="mr-2">
-        <button
-          class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-600 hover:border-gray-300 group"
-          data-tab-target="#content6">LinkedIn</button>
-      </li>
-
-      <!-- Add more tabs as needed -->
+    <ul class="flex flex-wrap -mb-px" id="tabs-container">
+      <!-- Tabs will be generated here -->
     </ul>
   </div>
-  <div id="content1" class="tab-content p-4 hidden">
-    <h1>RSS to Social Media Poster</h1>
-    <div id="post-container">
-      <!-- Processed post will be displayed here -->
-    </div>
-    <textarea id="edit-post" placeholder="Edit your post here..."></textarea>
-    <button id="post-to-social">Post to Social Media</button>
-  </div>
-  
-  <div id="content2" class="tab-content p-4 hidden">
-    <h2 class="text-lg font-semibold mb-2">Mastodon Posts</h2>
-    <div id="mastodon-posts"><!-- The split posts for Mastodon will go here --></div>
-  </div>
-  
-  <div id="content3" class="tab-content p-4 hidden">
-    <h2 class="text-lg font-semibold mb-2">Bluesky Posts</h2>
-    <div id="bluesky-posts"><!-- The split posts for Bluesky will go here --></div>
+  <div id="content-container">
+    <!-- Content areas will be generated here including the original text area -->
   </div>
 
-  <div id="content3" class="tab-content p-4 hidden">
-    <h2 class="text-lg font-semibold mb-2">Twitter posts</h2>
-    <div id="twitter-posts"><!-- The split posts for Bluesky will go here --></div>
-  </div>
-
-  <div id="content3" class="tab-content p-4 hidden">
-    <h2 class="text-lg font-semibold mb-2">Facebook</h2>
-    <div id="facebook-posts"><!-- The split posts for Bluesky will go here --></div>
-  </div>
-
-  <div id="content3" class="tab-content p-4 hidden">
-    <h2 class="text-lg font-semibold mb-2">LinkedIn</h2>
-    <div id="linkedin-posts"><!-- The split posts for Bluesky will go here --></div>
-  </div>
-
-  <!-- Add more content sections as needed -->
-
-  <script src="js/tabs.js"></script> <!-- This should be the path to your tabs functionality JavaScript file -->
+  <script src="popup.js"></script> <!-- This should be the path to your tabs functionality JavaScript file -->
 </body>
-</body>
-
 </html>
