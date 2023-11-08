@@ -1,47 +1,58 @@
 let popupWindowId = null;
+let originalTabId = null; // This will hold the ID of the tab where the user clicked the browser action
 
 chrome.browserAction.onClicked.addListener(() => {
   if (popupWindowId) {
-    // If the popup window is already created, bring it to focus.
     chrome.windows.update(popupWindowId, { focused: true });
     return;
   }
 
-  // Create a new window with the specified dimensions.
-  chrome.windows.create({
-    url: chrome.runtime.getURL('popup.html'),
-    type: 'popup',
-    width: 800,
-    height: 600
-  }, (newWindow) => {
-    // Store the ID of the created window.
-    popupWindowId = newWindow.id;
+  // Save the original tab ID before creating the new window
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    originalTabId = tabs[0].id; // Save the original tab ID
+
+    // Now create the new window
+    chrome.windows.create({
+      url: chrome.runtime.getURL('popup.html'),
+      type: 'popup',
+      width: 800,
+      height: 600
+    }, function(window) {
+      popupWindowId = window.id;
+    });
   });
 });
 
-// When the window is closed, reset popupWindowId so a new window can be created next time.
-chrome.windows.onRemoved.addListener((closedWindowId) => {
-  if (closedWindowId === popupWindowId) {
-    popupWindowId = null;
+// When the popup is ready, fetch content from the original tab
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.from === 'popup' && request.subject === 'requestData') {
+    // Make sure originalTabId is set and refers to a valid tab
+    if (originalTabId) {
+      fetchContentFromPage(originalTabId, sendResponse);
+    } else {
+      console.error('Original tab ID not set.');
+    }
+    return true; // Keep the message channel open to send a response later
   }
 });
 
-// This function sends a message to the content script to fetch data from the current tab.
-function fetchContentFromActiveTab() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs.length === 0) return; // No active tab found.
-    let activeTabId = tabs[0].id;
-    console.log("sending message activetabid", activeTabId);
-
-    chrome.tabs.sendMessage(activeTabId, { from: 'background', subject: 'fetchData' });
+// Fetch the content from the saved original tab ID
+function fetchContentFromPage(tabId, callback) {
+  chrome.tabs.sendMessage(tabId, { from: 'background', subject: 'fetchData' }, function(response) {
+    if (chrome.runtime.lastError) {
+      // Handle any errors that might occur
+      console.error('Error:', chrome.runtime.lastError.message);
+    } else {
+      // Use the response if available
+      callback(response);
+    }
   });
 }
 
-// Listen for a request from the popup window to fetch data.
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.from === 'popup' && request.subject === 'requestData') {
-    console.log("sending request to fetch");
-    fetchContentFromActiveTab();
-    return true; // Keep the message channel open to send a response later.
+// Clear the IDs when the window is closed
+chrome.windows.onRemoved.addListener((closedWindowId) => {
+  if (closedWindowId === popupWindowId) {
+    popupWindowId = null;
+    originalTabId = null; // Reset the original tab ID as well
   }
 });
