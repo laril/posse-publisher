@@ -1,0 +1,12 @@
+/* popup.css */
+body {
+    width: 600px; /* or any other size */
+    height: 400px; /* or any other size */
+  }
+  /* Make the handle look like a draggable area */
+#drag-handle {
+    background-color: #ccc;
+    cursor: move;
+    /* other styling */
+  }
+      
