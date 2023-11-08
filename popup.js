@@ -58,6 +58,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (postButton) {
     postButton.addEventListener('click', handlePostButtonClick);
   }
+
+
+    // Adjust the height of the initial textarea after it's been populated
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.from === 'content' && message.subject === 'deliverData') {
+        const editPostArea = document.getElementById('edit-post');
+        if (editPostArea) {
+          editPostArea.value = message.data || 'No content found.';
+          // Adjust the height of the edit-post textarea
+          adjustTextareaHeight(editPostArea);
+        }
+      }
+    });
+
+  adjustAllTextareas();
+
 });
 
 
@@ -73,29 +89,31 @@ function handlePostButtonClick() {
   });
 }
 
-  // Handle the click event for tabs
-  function handleTabClick(tabButton, index) {
-    // Activate the clicked tab and deactivate others
-    document.querySelectorAll('.tab-link').forEach(tab => {
-      tab.classList.remove('active', 'text-blue-600', 'border-blue-600');
-      tab.classList.add('hover:text-gray-600', 'hover:border-gray-300');
-    });
-    tabButton.classList.add('active', 'text-blue-600', 'border-blue-600');
-    tabButton.classList.remove('hover:text-gray-600', 'hover:border-gray-300');
+// Handle the click event for tabs
+function handleTabClick(tabButton, index) {
+  // Activate the clicked tab and deactivate others
+  document.querySelectorAll('.tab-link').forEach(tab => {
+    tab.classList.remove('active', 'text-blue-600', 'border-blue-600');
+    tab.classList.add('hover:text-gray-600', 'hover:border-gray-300');
+  });
+  tabButton.classList.add('active', 'text-blue-600', 'border-blue-600');
+  tabButton.classList.remove('hover:text-gray-600', 'hover:border-gray-300');
 
-    // Show the corresponding content area and hide others
-    document.querySelectorAll('.tab-content').forEach(content => {
-      content.classList.add('hidden');
-    });
-    const contentId = tabButton.dataset.tabTarget.slice(1);
-    document.getElementById(contentId).classList.remove('hidden');
+  // Show the corresponding content area and hide others
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.add('hidden');
+  });
+  const contentId = tabButton.dataset.tabTarget.slice(1);
+  document.getElementById(contentId).classList.remove('hidden');
 
-    // If it's not the original tab, load the content for the clicked tab if not already loaded
-    if (networks[index].name !== 'Original') {
-      const text = document.getElementById('edit-post').value;
-      displaySplitPosts(text, networks[index].charLimit, `${networks[index].name.toLowerCase()}-posts`);
-    }
+  // If it's not the original tab, load the content for the clicked tab if not already loaded
+  if (networks[index].name !== 'Original') {
+    const text = document.getElementById('edit-post').value;
+    displaySplitPosts(text, networks[index].charLimit, `${networks[index].name.toLowerCase()}-posts`);
   }
+  adjustAllTextareas();
+
+}
 
 
 // Listen for messages from the content script.
@@ -112,8 +130,9 @@ function splitTextIntoPosts(text, maxLength) {
   let currentPost = '';
 
   sentences.forEach(sentence => {
+    let safeLength=maxLength-7;
     // Check if the sentence itself is longer than the maxLength
-    if (sentence.length > maxLength) {
+    if (sentence.length > safeLength) {
       // If the current post isn't empty, push it to posts before handling the long sentence
       if (currentPost.trim() !== '') {
         posts.push(currentPost.trim());
@@ -122,7 +141,7 @@ function splitTextIntoPosts(text, maxLength) {
       // Split the long sentence into maxLength chunks
       let start = 0;
       while (start < sentence.length) {
-        let end = start + maxLength;
+        let end = start + safeLength;
         let chunk = sentence.slice(start, end);
         // Try to avoid splitting words by moving the end to the last space
         if (end < sentence.length) {
@@ -137,7 +156,7 @@ function splitTextIntoPosts(text, maxLength) {
       }
     } else {
       // Add sentence to current post if it doesn't exceed maxLength
-      if ((currentPost + sentence).length <= maxLength) {
+      if ((currentPost + sentence).length <= safeLength) {
         currentPost += sentence;
       } else {
         // Otherwise, push current post and start a new one
@@ -145,12 +164,14 @@ function splitTextIntoPosts(text, maxLength) {
         currentPost = sentence;
       }
     }
+
   });
 
   // Add the remaining current post if it's not empty
   if (currentPost.trim() !== '') {
     posts.push(currentPost.trim());
   }
+  adjustAllTextareas();
 
   // Add the indicator to each post
   return posts.map((post, index) => {
@@ -162,29 +183,34 @@ function splitTextIntoPosts(text, maxLength) {
     }
     return post + ` (${index + 1}/${posts.length})`;
   });
+
 }
 
 function displaySplitPosts(text, maxLength, containerId) {
-  console.log("fdas", text, maxLength, containerId )
   const posts = splitTextIntoPosts(text, maxLength);
   const container = document.getElementById(containerId);
-  console.log("got container", container);
   container.innerHTML = ''; // Clear previous content
+
 
   // Create a container for each post and textarea
   posts.forEach((post, index) => {
     const postContainer = document.createElement('div');
-    postContainer.classList.add('flex', 'mb-4', 'items-center'); // Tailwind classes for flex layout
+    postContainer.classList.add('flex', 'flex-col', 'mb-4', 'items-start'); // Adjusted for better layout
 
     const textarea = document.createElement('textarea');
     textarea.value = post;
-    textarea.classList.add('w-1/2', 'p-2', 'border', 'rounded'); // Tailwind classes for 50% width and styling
-    textarea.rows = 4; // Adjust the number of rows as needed
-    textarea.addEventListener('input', updateCharacterCount); // Add input listener to update character count
+    textarea.classList.add('resize-none', 'w-full', 'p-2', 'border', 'rounded'); // Changed to resize-none for controlled resizing
+    textarea.rows = 1; // Set rows to 1 to allow automatic resizing
+    textarea.style.overflow = 'hidden'; // Hide the scrollbar
+    textarea.style.resize = 'both'; // Allow resizing in both directions
+
+    // Add input listeners to update character count and adjust height
     textarea.setAttribute('data-maxlength', maxLength);
 
+    adjustTextareaHeight(textarea); // Adjust the height initially
+
     const charCount = document.createElement('span');
-    charCount.classList.add('ml-4'); // Tailwind class for margin-left
+    charCount.classList.add('ml-4', 'self-end'); // Adjusted for bottom alignment
     charCount.textContent = `${post.length}/${maxLength}`; // Initial character count
 
     // Append the textarea and character count to the post container
@@ -193,9 +219,39 @@ function displaySplitPosts(text, maxLength, containerId) {
 
     // Append the post container to the main container
     container.appendChild(postContainer);
+
+
   });
 }
 
+// Add event listener for input event to adjust height and update character count
+document.addEventListener('input', function (event) {
+  if (event.target.tagName.toLowerCase() === 'textarea') {
+    adjustTextareaHeight(event.target);
+    updateCharacterCount(event);
+  }
+});
+
+function adjustTextareaHeight(textarea) {
+  // Temporarily disable any height overflows
+  textarea.style.overflowY = 'hidden';
+
+  // Reset the height to 'auto' to get the correct scrollHeight
+  textarea.style.height = 'auto';
+
+  // Set the height to the scrollHeight to ensure all content fits
+  textarea.style.height = `${textarea.scrollHeight}px`;
+
+  // Re-enable overflow after adjusting the height
+  textarea.style.overflowY = '';
+}
+
+function adjustAllTextareas() {
+  // Get all textarea elements on the page
+  const textareas = document.querySelectorAll('textarea');
+  // Iterate through each textarea and adjust its height
+  textareas.forEach(adjustTextareaHeight);
+}
 
 // Function to update character count next to textarea
 function updateCharacterCount(event) {
